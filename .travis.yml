@@ -1,0 +1,27 @@
+sudo: required
+language: generic
+
+services:
+  - docker
+
+#test version of react before going to production
+before_install:
+#relativr path to docker file inside client directory.here build context is in client diectory
+  - docker build -t vipin4948/react-test -f ./client/Dockerfile.dev ./client
+
+#over ride defult startup command npm start to npm test
+script:
+  - docker run -e CI=true vipin4948/react-test npm test
+
+after_success:
+  - docker build -t vipin4948/multi-client ./client
+  - docker build -t vipin4948/multi-nginx ./nginx
+  - docker build -t vipin4948/multi-server ./server
+  - docker build -t vipin4948/multi-worker ./worker
+  # Log in to the docker CLI
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  # Take those images and push them to docker hub
+  - docker push vipin4948/multi-client
+  - docker push vipin4948/multi-nginx
+  - docker push vipin4948/multi-server
+  - docker push vipin4948/multi-worker
